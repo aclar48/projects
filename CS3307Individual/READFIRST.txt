@@ -1,0 +1,3 @@
+- The 'images' folder must be in the build directory for images to load properly.
+- The 'saveddata.sav' file must be in the build directory for the inital city list to load, if it is not added the program will still work fine you'll just have to
+pick some of your own cities when the program starts.
