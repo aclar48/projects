@@ -1,0 +1,81 @@
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<cilk.h>
+
+typedef struct {
+	int low;
+	int high;
+	int value;
+} subarr;
+
+subarr findCross(int *A, int low, int mid, int high);
+
+
+subarr findMax(int *A, int low,int high) {
+	int mid;
+	if(high == low) {
+		subarr  ar = {low,high,A[low]};
+		return  ar;
+	}
+	else {
+		mid = ((low+high)/2);
+		subarr lowA, highA;
+		lowA = cilk_spawn findMax(A,low,mid);
+		highA = cilk_spawn findMax(A,mid+1,high);
+		subarr cross = findCross(A,low,mid,high);
+		cilk_sync;
+		if(lowA.value >= highA.value && lowA.value >= cross.value) return lowA;
+		else if (highA.value >= lowA.value && highA.value >= cross.value) return highA;
+		else return cross;
+	}
+}
+
+
+subarr findCross(int *A, int low, int mid, int high) {
+	int leftsum = 0;
+	int sum = 0;
+	int maxleft = 0;
+	for(int i = mid; i >= low; i--) {
+		sum += A[i];
+		if( sum > leftsum) {
+			leftsum = sum;
+			maxleft = i;
+		}
+	}
+	int rightsum = 0;
+	sum = 0;
+	int maxright = 0;
+	for(int i = mid+1; i <= high; i++) {
+		sum += A[i];
+		if(sum > rightsum) {
+			rightsum = sum;
+			maxright = i;
+		}
+	}
+	subarr ar = {maxleft,maxright,leftsum+rightsum};
+	return ar;
+}
+
+
+int cilk_main(int argc, char **argv) {
+	
+	if(argc < 2) { puts("Usage bentley, size of array, entires in array"); return 1; }
+	else {
+		int n = atoi(argv[1]);
+		int *A =(int*) calloc(n,sizeof(int));
+		for(int i = 0; i < n; i++) A[i] = atoi(argv[2+i]);
+		subarr result = findMax(A, 0, n-1);
+		int total = 0;
+		for(int i = result.low; i <= result.high; i++) total += A[i];
+		printf("max is: %d\n", total);
+		return 0;
+	}
+}
+
+
+
+
+
+	
+		

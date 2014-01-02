@@ -1,0 +1,26 @@
+alex@Alex-Desktop:~/Code/3101/asn1$ ./testpoly.sh
+Testing for n = 2048
+Testing via method 1
+2048
+Testing method 1
+0.02user 0.00system 0:00.02elapsed 92%CPU (0avgtext+0avgdata 588maxresident)k
+0inputs+0outputs (0major+189minor)pagefaults 0swaps
+
+Testing via method 2
+2048
+Testing method 2
+0.02user 0.00system 0:00.02elapsed 92%CPU (0avgtext+0avgdata 576maxresident)k
+0inputs+0outputs (0major+186minor)pagefaults 0swaps
+
+Testing for n = 131072
+Testing via method 1
+131072
+Testing method 1
+100.55user 0.01system 1:40.99elapsed 99%CPU (0avgtext+0avgdata 3600maxresident)k
+0inputs+0outputs (0major+941minor)pagefaults 0swaps
+
+Testing via method 2
+131072
+Testing method 2
+69.92user 0.00system 1:10.23elapsed 99%CPU (0avgtext+0avgdata 3088maxresident)k
+0inputs+0outputs (0major+942minor)pagefaults 0swaps

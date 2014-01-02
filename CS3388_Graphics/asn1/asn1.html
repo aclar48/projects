@@ -1,0 +1,314 @@
+
+
+<html>
+<head>
+<title> CS3388 Asn1 </title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_FragColor = vColor;
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec4 aVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = aVertexColor;
+    }
+</script>
+
+
+<script type="text/javascript">
+/*
+ * Program Description: A field of rectangular debris majestically floating around a 640*640px canvas
+ * Author: Alex Clarke, using the webgl tutorial here: http://learningwebgl.com/blog/?page_id=1217 as a reference
+ * Class: CS3388
+ * Date: Oct 5, 2013
+ */
+
+
+ //Global Variables
+   var gl;
+   var rotation = []; //array of rotation in deg of our rectangles
+   var rotDir = []; //array of rotation direction of our rectangles
+   var xMove = []; //array of x offset for our rectangles
+   var xDir = []; //array of x direction our rectangles to move
+   var yMove = []; //array of y offset for our rectangles
+   var yDir = [];  //array of y direction for our rectangle to move
+   var mvMatrix = mat4.create(); //Modelview matrix
+   var pMatrix = mat4.create(); //Projection matrix
+   var mvMatrixStack = []; //Stack of matricies
+   var positionBuffers = []; //array of position buffers for our rectangles
+   var colourBuffers = []; //array of colour buffers for our rectangles
+   var numObjects = 25; //number of rectangles to fly around the debris field 
+
+/* 
+ * function initGL
+ * initalize webgl so we can actually do stuff
+ * param canvas - the canvas to draw on
+ */
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;		//set viewport to match canvas size
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+/*
+ * function getShader
+ * Find the shaders and return them
+ * params id - the name of where the shader is, gl the assoicated webgl 'object'
+ * return - the shaders
+ */
+ 
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+
+    var shaderProgram;
+/*
+ * function initShaders
+ * fetch and initalize the shaders
+ */
+    function initShaders() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
+
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram);
+
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+        
+        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+	gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+    }
+
+
+
+/*
+ * function mvPushMatrix 
+ * push a matrix onto the stack
+ */
+     function mvPushMatrix() {
+      var copy = mat4.create();
+      mat4.set(mvMatrix, copy);
+      mvMatrixStack.push(copy);
+    }
+/*
+ * function mvPopMatrix
+ * pop the top matrix off the matrix stack
+ */
+    function mvPopMatrix() {
+      if (mvMatrixStack.length == 0) {
+	throw "Invalid popMatrix!";
+      }
+      mvMatrix = mvMatrixStack.pop();
+    }
+/* function setMatrixUniforms 
+ * send webgl the shader info from shaderProgram
+ *
+ */
+    function setMatrixUniforms() {
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+    }
+/*
+ * function degToRad
+ * convert degrees into radians
+ * param: degrees - a value in degrees
+ * return the radian value 
+ */
+    function degToRad(degrees) {
+      return degrees*Math.PI/180;
+    }
+/*
+ * function initBuffers
+ *  setup the inital dimensions and colour of each triangle and load them into the buffers
+ */
+  function initBuffers() {
+  
+      for(var i = 0; i < numObjects; ++i) {	//Loop through and generate numObjects worth of wonderful rectangles
+      positionBuffers[i] = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffers[i]);
+      var side1 = Math.random() + 0.25;	//Pick a random size for first pair of sides
+      var side2 = Math.random() + 0.25;	//Pick a random size for second pair of sides
+      vertices = [
+	side1, side2, 0.0,
+	side1*-1, side2, 0.0,
+	side1, side2*-1, 0.0,
+	side1*-1, side2*-1,0.0
+      ];
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+      positionBuffers[i].itemSize = 3;
+      positionBuffers[i].numItems = 4;
+      
+      colourBuffers[i] = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, colourBuffers[i]);
+      colours = [];
+      var r = Math.random();		//Generate some random red green and blue values
+      var g = Math.random();
+      var b = Math.random();
+      for(var k = 0; k < 4; ++k) 
+	colours = colours.concat([r,g,b,1.0]);	// Make a rainbow of wonderful rectangles
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colours), gl.STATIC_DRAW);
+      colourBuffers[i].itemSize = 4;
+      colourBuffers[i].numItems = 4;
+  	}
+    }
+   
+/*
+ * function drawScene
+ * applies transformations to the rectangles and draws them on screen
+ */
+   function drawScene() {
+    gl.viewport(0,0,gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    mat4.perspective(45, gl.viewportWidth/gl.viewportHeight, 0.1, 100.0, pMatrix);
+    
+  for(var i = 0; i < numObjects; ++i) {	//Loop through and draw every wonderful rectangle
+      mat4.identity(mvMatrix);		//Set each rectangle's matrix to identity
+      mat4.translate(mvMatrix,[ xMove[i] ,yMove[i], -7.0]);	//Apply required translations to its position
+      mvPushMatrix();
+      mat4.rotate(mvMatrix,degToRad(rotation[i]), [0,0,1]);	//Rotate on the z axis
+      mat4.scale(mvMatrix,[Math.sin(degToRad(rotation[i])),Math.cos(degToRad(rotation[i])),1.0]); //Allow the rectangles to majestically scale as they move
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffers[i]);
+      gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, positionBuffers[i].itemSize, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, colourBuffers[i]);
+      gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colourBuffers[i].itemSize, gl.FLOAT, false, 0, 0);
+      setMatrixUniforms();
+      gl.drawArrays(gl.TRIANGLE_STRIP,0, positionBuffers[i].numItems);	
+      mvPopMatrix();
+      }
+    
+    }
+    var lastTime = 0;
+/*
+ * function animate
+ * performs the adjustments to the scale, skew and rotation variables needed for each new frame
+ */
+    function animate() {
+      var timeNow = new Date().getTime();
+      if(lastTime != 0) {
+	var elapsed = timeNow - lastTime;
+	for(var i = 0; i < numObjects; ++i) { 
+	  rotation[i] += (500*elapsed*rotDir[i]*(Math.random()))/1000.0; //Rotate between 0 and 0.5 deg/frame
+	  xMove[i] += Math.random()*0.025*xDir[i];	//Move between 0 and 0.025 units/frame in the x plane
+	  yMove[i] += Math.random()*0.025*yDir[i];	//Move between 0 and 0.025 units/fram in the y plane
+	  if(xMove[i] > 4.0) {  xMove[i] = -4.0; yMove[i] = -1*yMove[i]; }	//X positive drift off frame brought around to other side
+	  if(yMove[i] > 4.0) {  yMove[i] = -4.0; xMove[i] = -1*xMove[i]; }	//Y positive drift off frame brought around to other side
+	  if(xMove[i] < -4.0){  xMove[i] = 4.0; yMove[i] = -1*yMove[i];	}	//X negative drift off frame brought around to other side
+	  if(yMove[i] < -4.0){  yMove[i] = 4.0; xMove[i] = -1*xMove[i]; }	//Y negative drift off frame brought around to other side
+	  
+	  }
+	}
+	lastTime = timeNow;
+       
+    }
+/*
+ * function tick
+ * calls the functions necessary to draw each frame
+ */
+    function tick() {
+      requestAnimFrame(tick);
+      drawScene();
+      animate();
+      
+   }
+/*
+ * function webGLStart 
+ * Initalizes starting variables, prepares shaders, buffers and canvas for drawing and draws the scene
+ *
+ */
+  function webGLStart() {
+    var canvas = document.getElementById("CS3388Asn1");
+    initGL(canvas);
+    initShaders();
+    initBuffers();
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);	//Make canvas opaque black
+    gl.enable(gl.DEPTH_TEST);
+    for(var i = 0; i < numObjects; ++i) {
+      rotation[i] = Math.random()*360;	//pick random degree of inital rotation
+      rotDir[i] = Math.random()*2-1;	//Pick random rotation direction
+      xMove[i] = (Math.random()*6-3);	//pick random x start position
+      xDir[i] = Math.random()*2-1;	//pick random x direction
+      yDir[i] = Math.random()*2-1;	//pick random y direction
+      yMove[i] = (Math.random()*6-3);	//pick random y start position
+      }
+    tick();
+
+    drawScene();
+    
+    }
+</script>
+
+
+</head>
+<body onload="webGLStart();" >
+  <canvas id="CS3388Asn1" style="border: none;" width="640" height="640"></canvas>
+</body>
+</html>

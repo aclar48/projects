@@ -1,0 +1,162 @@
+/*
+ * asn3.cilk
+ *
+ *  Created on: 2013-04-08
+ *      Author: Alex Clarke
+ */
+#include<stdio.h>
+#include<stdlib.h>
+#include<cilk.h>
+#include<cilkview.h>
+#include<iostream>
+#include<math.h>
+#include<string.h>
+#include<time.h>
+#define DEFAULT_MATRIX_SIZE 4096
+#define CILK_FOR_GRAINSIZE 128
+
+
+void clearFloatArray(float **A, int n);
+void matrix_multiply(float* B, float* C, float* A, int n) //Taken from cilk examples
+{
+    if (n < 1) {
+        return;
+    }
+
+    cilk_for(int i = 0; i < n; ++i) {
+        // This is the only Cilk++ keyword used in this program
+		// Note the order of the loops and the code motion of the i * n and k * n
+		// computation. This gives a 5-10 performance improvment over exchanging
+		// the j and k loops.
+		int itn = i * n;
+        for (int k = 0; k < n; ++k) {
+            for (int j = 0; j < n; ++j) {
+    	        int ktn = k * n;
+                // Compute A[i,j] in the innner loop.
+                A[itn + j] += B[itn + k] * C[ktn + j];
+            }
+        }
+    }
+    return;
+}
+void print_float_matrix(float** M, int n) {	//Print a matrix, used for debugging
+
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			printf("%lf , ", M[i][j]);
+		}
+		printf("\n");
+	}
+
+
+
+}
+
+float** makeFloatArray(int n) {		//Allocate a nxn array of floats
+	float **A = (float **) calloc(n,sizeof(float *));
+	A[0] = (float *) calloc(n*n,sizeof(float));
+	for(int i =0; i<n; i++) A[i] = A[0] + i*n;
+	return A;
+
+
+
+}
+
+void clearFloatArray(float **A, int n) {	//Deallocate a nxn array of floats
+	for(int i = 0;i<n;i++) {
+		free(A[i]);
+	}
+	free(A);
+	A = NULL;
+}
+
+void invertTMat(float **A, int n) {		//Invert an invertable lower triangle nxn matrix
+	if(n == 2) {				//Base case, manually invert the matrix
+		float det = A[0][0]*A[1][1];
+		float a, c ,d;
+		a = A[0][0];
+		c = A[1][0];
+		d = A[1][1];
+		A[0][0] = d/det;
+		A[1][0] = c/det*-1;
+		A[1][1] = a/det;
+	} else {
+		float **A1, **A2;
+		A1 = cilk_spawn makeFloatArray(n/2);		//Allocate 3 temporary arrays in parallel
+		A2 = cilk_spawn makeFloatArray(n/2);
+		float **A3 = makeFloatArray(n/2);
+		cilk_sync;
+		
+		
+		cilk_for(int i = 0; i < n/2; i++) {		//Divide A in parallel
+			for(int j = 0; j < n/2; j++) {
+				A1[i][j] = A[i][j];
+				A2[i][j] = A[i+n/2][j];
+				A3[i][j] = A[i+n/2][j+n/2];
+			}
+		}
+		//puts("Done copy");
+		cilk_spawn invertTMat(A1,n/2);			//Recursively invert A1 and A3 in parallel
+		invertTMat(A3,n/2);
+		cilk_sync;
+		float **C = makeFloatArray(n/2);
+		matrix_multiply(A3[0],A2[0],C[0],n/2);
+		A2 = makeFloatArray(n/2);			//Clear A2 so it can be reused
+		matrix_multiply(C[0],A1[0],A2[0],n/2);
+		cilk_for(int i = 0; i < n/2; i++) {		//Reassemble A in parallel
+			for(int j = 0; j < n/2; j++) {
+				A[i][j] = A1[i][j];
+				A[i+n/2][j] = A2[i][j];
+				A[i+n/2][j+n/2] = A3[i][j];
+			}
+		}
+
+		
+	//	printf("Done for n = %d\n",n);
+		}
+
+
+}
+
+
+
+int mimain(int n) {
+
+  float **A = makeFloatArray(n);
+  
+  cilk_for(int i = 0; i < n; i++) {		//Fill the entire lower triangle with numbers in parallel
+    for(int j = 0; j <= i; j++) {
+      A[i][j] = (i*j+1)%256;
+    }
+  }
+  
+  cilk::cilkview cv;
+  
+  cv.start();
+  invertTMat(A,n);		//Benchmark with cilkview
+  cv.stop();
+  cv.dump("asn3q1_results", false);
+  std::cout << cv.accumulated_milliseconds() / 1000.f << " seconds" << std::endl;
+ 
+   
+  
+}
+
+
+
+
+int cilk_main(int argc, char* argv[]) {
+  
+  int n;
+  
+  if(argc < 2) puts("Usage asn3, size of matrix");
+  else {
+    n = atoi(argv[1]);
+   return mimain(n);
+  }
+  return 1;
+}
+
+
+
+
