@@ -1,0 +1,39 @@
+/*! \mainpage OMBI Viewer 3 Mainpage
+ *
+ * \image html ombi-logo2.png
+ *
+ * \section intro_sec Introduction
+ *
+ * The Ontario Municipal Benchmarking Initiative (OMBI) is a groundbreaking initiative collecting  
+ * data for more than 850 measures across thirty-seven municipal service areas. 
+ * OMBI acts as a source of credible information to assist Council, Senior Management, Staff, and
+ * Citizens to understand how their municipality is performing over time and in relation to others.  
+ * This program assists in organizing and visualizing the OMBI data by providing an intuitive and
+ * simple interface to generate spreadsheets, line graphs, and bar graphs presenting the data.
+ * 
+ * The program begins with an introduction and explanation page, and then flips to a window to 
+ * select the service measure to view, or two service measures to compare. If only one service 
+ * measure is to be viewed, the user can view a table, bar chart, or line chart. The user must 
+ * select the years and municipalities to view the data. If two service measures are to be compared 
+ * the user will be able to generate a line chart and choose the years and municipalities.
+ *
+ * In any graph, the user is able to change the line labels by selecting the item in the legend, 
+ * change the colours by clicking the background or the axis, change the line or bar colour by clicking on them,   
+ * change the title, changing the axis by scrolling, and change the position by clicking and dragging the graph. The user is able to 
+ * save the graphs and the table in the same format as is seen on the screen once they are happy 
+ * with the format.
+ * 
+ * The data is stored in an SQLite3 database and accessed dynamically as needed. The data for a
+ * measure is loaded when the measure is selected. Each measure contains a list of municipalities,
+ * each with a list of years, with one data point per year. This data structure is robust and flexible. 
+ *
+ * \section authors Authors
+ * This project is part of the Computer Science 3307 course, and was created by Group 3, 
+ * consisting of Hasan Almawi, Alex Clarke, Jamie Finnigan, Melanie Imough, and Jen Stewart. 
+ *  
+ *
+ * \section help_section Help Documentation
+ * Help documentation is available.
+ * 
+ *
+ */
