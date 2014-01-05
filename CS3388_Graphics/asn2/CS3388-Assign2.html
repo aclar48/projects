@@ -1,0 +1,44 @@
+<HTML>
+<FONT FACE="Verdana">
+<HEAD>
+<TITLE>CS3388 ASSIGNMENT 2</TITLE>
+</HEAD>
+
+<BODY BGCOLOR = "#FFFFFF">
+<HR>
+<CENTER>
+<h1><p><b>CS3388 ASSIGNMENT 2</h1></b>
+<HR>
+</CENTER>
+
+<p><CENTER>
+<i>Due date: Thursday October 31st 2013, at 11:55pm<br>
+Weight: 10% of final mark</i><br>
+</CENTER>
+<p>
+This assignment consists of the design and implementation of a program that allows a user to 
+define and render 3D objects defined around an axis of symmetry. Your program will read 3D points
+forming a 2D profile defined in the (X,Z) plane, rotate this profile around the Z-axis by a
+small angle, collect these newly formed points and create a polygonal mesh made up of triangles.
+
+Your program will perform the following:
+<OL>
+<LI>Read the 3d points forming the 2D profile from this <A href="http://www.csd.uwo.ca/faculty/beau/CS3388/vase.txt">file</A>.<p>
+<LI>Apply an appropriate number of rotations of the points around the <i>Z</i>-axis. While this is performed, 
+    compute and storage triangular faces in a counterclockwise fashion to form a polygonal mesh of the object.
+    Use a data structure that is consonant with that of the Course Textbook on page 276.<p>
+<LI>The next part of the program is to render the object. In order to accomplish this correctly, the 
+    program must:<p>
+    <UL TYPE=BULLET>
+    <LI>Define at least one light source with ambient, diffuse, and specular components specified.<p>
+    <LI>Define material properties for the object being created.<p>
+    <LI>Implement hidden surface removal but not back face removal, because for some objects, back
+	faces may be visible.<p>
+    <LI>Animate the object by defining a camera and moving it around the object, in a fashion of your choice.<p>
+    <LI>Animate the lighting by independently moving the light around the object, on a path different
+        from the camera.<p>
+    <LI>The object must look as realistic as possible.<p>
+    </UL>
+<LI>The program will terminate when the user presses 'Q'.<p>
+</BODY>
+</HTML>

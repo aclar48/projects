@@ -1,0 +1,100 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body bgcolor="#FFFFFF"><font face="Verdana">
+
+<title>CS3388 ASSIGNMENT 1</title>
+
+
+
+<hr>
+<center>
+<h1><p><b>CS3388 ASSIGNMENT 1</b></p></h1>
+<hr>
+</center>
+
+<p></p><center>
+<i>Due date: Saturday Oct. 5th 2013, at 11:55pm<br>
+Weight: 10% of final mark</i><br>
+</center>
+<p> The purpose of this first graphics assignment is to understand 
+OpenGL 2D transformations (rotation, translation, and scaling)
+    by programming an animation in which a number of rectangles of 
+various initial color, sizes, positions, orientations, undergo
+    2D transformations. The details of the assignment are given in point
+ form below: 
+</p><p>
+</p><p>You may use any of the following platforms OpenGL ES 2.0, 
+(android or iPhone), WebGL (any browser that supports HTML5) or, OpenGL 
+in MC10 in the lab. OpenGl in MC10 is potentially very very very out of 
+of date.  If you're having problems make sure you indicate which 
+platform you're working on for help.   We will have an in class demo of 
+assignments on October 8th (basically, show your assignment to the TA's 
+in class, they'll write down that they saw it working and any problems 
+they had).  You'll also do a short demo to your fellow students and talk
+ quickly about what you did - ideally you'll talk to people who used 
+other platforms and get some experience that way.  
+</p><p>There is a small written portion to this assignment.  
+When you are done the programming part, please include a brief (~1/2 page is fine) summary of:
+</p><p>Any platform problems you had in getting setup, IDE, packages, 
+development environments, device emulators etc. Any jargon you found in 
+the documentation that you wasted a lot of time trying to figure out 
+etc. 
+</p><p>What, if any programming problems you had - you can be brief.
+</p><p>And lastly:  How did you make any design choices that were 
+needed? E.g. how did you decide if something was moving too fast or too 
+slow, if there were too many or too few objects, how big the objects 
+should be etc. 
+</p><p>
+</p><p>If the 'user input' stuff ends up being a disaster on mobile then we will adjust the grading accordingly. 
+</p><ol>
+  <p>
+  </p><li>The window size for this animation is either your screen size 
+or 640 by 640 pixels. The viewport area should be equal to the window. 
+    <p></p></li><li>The background color of the window is black.
+<p>
+  </p></li><li>The number of rectangles in this animation is whatever you think looks best, and if you cannot decide, use 25.  
+      <p>
+</p></li><li>The color of each rectangle is determined randomly by generating three random numbers (comprised between 0 and 1) that
+       are used as parameters to <tt>glColor3f()</tt> in fixed function or with a simple programmable shader in WebGL ES 2.0 etc.. Their color does not need to change over time.
+       <p>
+</p></li><li>The initial position of each rectangle is determined 
+randomly. This random coordinate represents the initial translation
+       for the rectangle. This initial translation is given by randomly 
+generating to integer numbers between 0 and screen dimensions. 
+  <p></p></li><li>The direction of the translation (or speed) is 
+determined by a 2D vector. It is initialized with 2 random numbers 
+between -1.0 and 1.0).
+       During the animation, this vector is added to the initial 
+translation of a rectangle in a cumulative manner in between each
+       frame. 
+<p>
+</p></li><li>The initial size of the rectangle should be determined randomly, - within some reasonable range.  
+  <p></p></li><li>The initial orientation of each rectangle is expressed
+ as an angle (between 0 and 360 degrees) and is initially randomly 
+assigned.
+       The direction of the rotation (clockwise or counter-clockwise) is
+ determined randomly and should increase (or decrease) by a randomly
+       generated angular increment, comprised between -0.5 and 0.5 
+degree. The rotation must be about the center point of the rectangle.
+<p>
+</p></li><li>The rectangles will change shape slightly and rhythmically during the animation. You may use a scaling transformation 
+       such as (fixed function) <tt>glScalef(1.0 + sin(angle/10.0)/5.0 ,1.0 + cos(angle/10.0)/5.0, 1.0)</tt>, where <tt>angle</tt> is the current
+       rotation angle of the rectangle.
+Or modelViewMatrix = objscale * </li></ol><p>
+You must pay attention to various important details:
+</p></font><ol><font face="Verdana">
+<p>
+</p><li>Double buffering must be used. Otherwise the animation will not work properly.  (Unless you use WebGl)
+  <p>
+</p></li><li>There is a defined order in which the transformations are applied, for them to work properly. You must also use (fixed function)
+       <tt>glPushMatrix()</tt> before using <tt>glRotatef()</tt>, <tt>glTranslatef()</tt>, and <tt>glScalef()</tt>, followed
+       by a <tt>glPopMatrix()</tt> instructions, or (programmable Pipeline) camRotate , camScale, camTranslate, objTranslate, objscale objRotate.  
+       <p>
+</p></li><li>When the program is invoked, the rectangles will appear but will remain motionless until the user presses the <tt>s</tt> key
+       on the keyboard to start the animation. If you're on mobile... figure out some other input.  
+  <p>
+</p></li><li>The program will quit when the user presses the <tt>q</tt> key.  Your application should have a way to quit.  Have fun figuring out a way to do that on mobile.  
+<p>      
+</p></li><li>When a rectangle exits the window due to its translation, you must ensure that it will be wrapped around and reappear at its
+       complementary position on the other side of the window.
+</font>
+</li></ol></body></html>
